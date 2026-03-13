@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 
 
 class QuranWordCounter:
@@ -17,7 +18,6 @@ class QuranWordCounter:
 
             for i, ayah in enumerate(ayahs):
 
-                # normalize first
                 normalized = self._normalize_arabic(ayah)
 
                 # remove Bismillah prefix (except Surah 1)
@@ -32,19 +32,10 @@ class QuranWordCounter:
 
     def _clean_text(self, text):
 
-        # remove Arabic diacritics
         text = re.sub(r'[\u0617-\u061A\u064B-\u0652]', '', text)
-
-        # remove Quran annotation marks
         text = re.sub(r'[\u06D6-\u06ED]', '', text)
-
-        # normalize hamzat-wasl
         text = text.replace("ٱ", "ا")
-
-        # remove tatweel
         text = text.replace("ـ", "")
-
-        # normalize spaces
         text = re.sub(r'\s+', ' ', text)
 
         return text.strip()
@@ -52,19 +43,10 @@ class QuranWordCounter:
 
     def _normalize_arabic(self, text):
 
-        # remove diacritics
         text = re.sub(r'[\u0617-\u061A\u064B-\u0652]', '', text)
-
-        # remove Quranic marks
         text = re.sub(r'[\u06D6-\u06ED]', '', text)
-
-        # normalize hamza forms
         text = text.replace("ٱ", "ا")
-
-        # remove tatweel
         text = text.replace("ـ", "")
-
-        # normalize spaces
         text = re.sub(r'\s+', ' ', text)
 
         return text.strip()
@@ -78,10 +60,8 @@ class QuranWordCounter:
 
         # remove Bismillah
         if words[:4] == ["بسم", "الله", "الرحمن", "الرحيم"] or \
-        words[:4] == ["بسم", "الله", "الرحمٰن", "الرحيم"]:
+           words[:4] == ["بسم", "الله", "الرحمٰن", "الرحيم"]:
             words = words[4:]
-
-        print(words)   # debug AFTER cleanup
 
         return len(words)
 
@@ -92,31 +72,70 @@ class QuranWordCounter:
         return self._count_words(text)
 
 
-    def count_words_first_n_ayahs(self, surah, n):
-
-        total = 0
-
-        for ayah in self.quran[str(surah)][:n]:
-            total += self._count_words(ayah)
-
-        return total
-
-
-    def count_words_in_surah(self, surah):
-
-        total = 0
-
-        for ayah in self.quran[str(surah)]:
-            total += self._count_words(ayah)
-
-        return total
-
-
     def count_words_range(self, surah, start_ayah, end_ayah):
 
         total = 0
 
         for ayah in self.quran[str(surah)][start_ayah-1:end_ayah]:
-            total += len(ayah.split())
+            total += self._count_words(ayah)
 
         return total
+
+
+# -----------------------------
+# CLI Helpers
+# -----------------------------
+
+def parse_verses(arg):
+
+    verses = []
+
+    parts = arg.split(",")
+
+    for part in parts:
+
+        if "-" in part:
+            start, end = map(int, part.split("-"))
+            verses.extend(range(start, end + 1))
+        else:
+            verses.append(int(part))
+
+    return verses
+
+
+# -----------------------------
+# Main
+# -----------------------------
+
+if __name__ == "__main__":
+
+    if len(sys.argv) != 4:
+
+        print("\nUsage:")
+        print("python3 quran_word_counter.py <quran_json> <surah> <verse_list>")
+        print("\nExamples:")
+        print("python3 quran_word_counter.py quran.json 96 1-5")
+        print("python3 quran_word_counter.py quran.json 50 1,3,5")
+        print("python3 quran_word_counter.py quran.json 50 1,5-10\n")
+
+        sys.exit()
+
+    quran_file = sys.argv[1]
+    surah = int(sys.argv[2])
+    verses = parse_verses(sys.argv[3])
+
+    counter = QuranWordCounter(quran_file)
+
+    total = 0
+
+    print("\nSelected verses:\n")
+
+    for v in verses:
+
+        count = counter.count_words_in_ayah(surah, v)
+
+        print(f"{surah}:{v} -> {count} words")
+
+        total += count
+
+    print("\nTotal words:", total)
