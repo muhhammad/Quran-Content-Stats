@@ -71,3 +71,35 @@ def count_letter_in_surah(surah,letter_name):
     uthmani=_count_letters("quran-uthmani.txt",surah,letter)
 
     return plain,uthmani
+
+
+def count_all_letters_in_verses(surah, verses):
+
+    start = sum(ayah_counts[:surah-1])
+
+    letter_counts_plain = {}
+    letter_counts_uthmani = {}
+
+    with open("quran-simple-plain.txt", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    for v in verses:
+        text = normalize(lines[start + v - 1])
+
+        for c in text:
+            if c.isalpha():
+                letter_counts_plain[c] = letter_counts_plain.get(c, 0) + 1
+
+
+    with open("quran-uthmani.txt", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    for v in verses:
+        text = normalize(lines[start + v - 1])
+
+        for c in text:
+            if c.isalpha():
+                letter_counts_uthmani[c] = letter_counts_uthmani.get(c, 0) + 1
+
+
+    return letter_counts_plain, letter_counts_uthmani
