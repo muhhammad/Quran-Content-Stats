@@ -3,6 +3,7 @@ import sys
 from quran_letter_counter import count_letter_in_surah
 from quran_letter_counter import count_all_letters_in_verses
 from quran_letter_counter import letter_map
+from quran_letter_counter import ayah_counts
 
 from quran_word_counter import QuranWordCounter
 
@@ -77,10 +78,18 @@ command = sys.argv[1]
 
 if command == "words":
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in (3,4):
         usage()
 
     surah = int(sys.argv[2])
+
+    surah = int(sys.argv[2])
+
+    if len(sys.argv) == 4:
+        verses = parse_verses(sys.argv[3])
+    else:
+        verses = list(range(1, ayah_counts[surah-1] + 1))
+
     verses = parse_verses(sys.argv[3])
 
     counter = QuranWordCounter("quran.json")
@@ -150,13 +159,24 @@ elif command == "letters":
 
 elif command == "freq":
 
-    if len(sys.argv) != 4:
+    from quran_letter_counter import ayah_counts
+
+    if len(sys.argv) not in (3,4):
         usage()
 
     surah = int(sys.argv[2])
-    verses = parse_verses(sys.argv[3])
+
+    # If verses specified
+    if len(sys.argv) == 4:
+        verses = parse_verses(sys.argv[3])
+
+    # Otherwise use entire surah
+    else:
+        verses = list(range(1, ayah_counts[surah-1] + 1))
+
 
     plain, uthmani = count_all_letters_in_verses(surah, verses)
+
 
     print("\nPlain text frequency\n")
 
@@ -168,6 +188,7 @@ elif command == "freq":
 
     print("\nTotal letters:", total)
     print("Divisible by 19:", check_19(total))
+
 
     print("\nUthmani frequency\n")
 
@@ -412,6 +433,6 @@ elif command == "verify":
                 f"Uthmani:{u}"
             )
 
-            
+
 else:
     usage()
