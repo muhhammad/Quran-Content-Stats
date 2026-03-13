@@ -247,6 +247,98 @@ elif command == "freq_all":
 
 
 # -------------------------
+# LETTER COUNT PER VERSE
+# -------------------------
+
+elif command == "letter_verses":
+
+    from quran_letter_counter import ayah_counts, normalize, letter_map
+
+    if len(sys.argv) != 4:
+        usage()
+
+    letter_name = sys.argv[2].lower()
+    surah = int(sys.argv[3])
+
+    if letter_name not in letter_map:
+        print("Unknown letter")
+        sys.exit()
+
+    letter = letter_map[letter_name]
+
+    start = sum(ayah_counts[:surah-1])
+
+    with open("quran-simple-plain.txt", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    print(f"\nLetter '{letter}' ({letter_name}) in Surah {surah}\n")
+
+    total = 0
+
+    for ayah in range(1, ayah_counts[surah-1] + 1):
+
+        text = normalize(lines[start + ayah - 1])
+
+        count = text.count(letter)
+
+        total += count
+
+        print(f"{surah}:{ayah:3}  {count}")
+
+    print("\n----------------------------------")
+
+    print("TOTAL:", total)
+    print("Divisible by 19:", check_19(total))
+
+
+# -------------------------
+# VISUAL LETTER MAP
+# -------------------------
+
+elif command == "letter_map":
+
+    from quran_letter_counter import ayah_counts, normalize, letter_map
+
+    if len(sys.argv) != 4:
+        usage()
+
+    letter_name = sys.argv[2].lower()
+    surah = int(sys.argv[3])
+
+    if letter_name not in letter_map:
+        print("Unknown letter")
+        sys.exit()
+
+    letter = letter_map[letter_name]
+
+    start = sum(ayah_counts[:surah-1])
+
+    with open("quran-simple-plain.txt", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    print(f"\nLetter '{letter}' ({letter_name}) visual map in Surah {surah}\n")
+
+    total = 0
+
+    for ayah in range(1, ayah_counts[surah-1] + 1):
+
+        text = normalize(lines[start + ayah - 1])
+
+        count = text.count(letter)
+
+        total += count
+
+        bar = "█" * count
+
+        print(f"{surah}:{ayah:3}  {bar}")
+
+    print("\n----------------------------------")
+
+    print("TOTAL:", total)
+    print("Divisible by 19:", check_19(total))
+
+    
+# -------------------------
 # TOTAL OCCURRENCES OF A LETTER IN QURAN
 # -------------------------
 
@@ -421,6 +513,67 @@ elif command == "verse":
 
     for k in sorted(freq):
         print(k, ":", freq[k])
+
+
+# -------------------------
+# VERSE SCAN (WHOLE SURAH)
+# -------------------------
+
+elif command == "verse_scan":
+
+    import re
+    from quran_letter_counter import ayah_counts
+
+    if len(sys.argv) != 3:
+        usage()
+
+    surah = int(sys.argv[2])
+
+    counter = QuranWordCounter("quran.json")
+
+    total_words = 0
+    total_letters = 0
+
+    print(f"\nVerse scan for Surah {surah}\n")
+
+    for ayah in range(1, ayah_counts[surah-1] + 1):
+
+        raw_text = counter.quran[str(surah)][ayah-1]
+
+        clean_text = counter._clean_text(raw_text)
+
+        words = clean_text.split()
+
+        # remove Bismillah if present
+        if words[:4] == ["بسم","الله","الرحمن","الرحيم"] or \
+           words[:4] == ["بسم","الله","الرحمٰن","الرحيم"]:
+            words = words[4:]
+
+        verse_text = " ".join(words)
+
+        word_count = len(words)
+
+        letters = re.findall(r"[ء-ي]", verse_text)
+        letter_count = len(letters)
+
+        total_words += word_count
+        total_letters += letter_count
+
+        print(
+            f"{surah}:{ayah:3}  "
+            f"Words:{word_count:3}  "
+            f"Letters:{letter_count:3}"
+        )
+
+    print("\n----------------------------------")
+
+    print("TOTAL WORDS:", total_words)
+    print("Divisible by 19:", check_19(total_words))
+
+    print()
+
+    print("TOTAL LETTERS:", total_letters)
+    print("Divisible by 19:", check_19(total_letters))
 
 
 # -------------------------
