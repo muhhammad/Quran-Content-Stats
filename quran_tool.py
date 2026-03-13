@@ -203,6 +203,227 @@ elif command == "freq":
 
 
 # -------------------------
+# LETTER FREQUENCY ALL SURAHS
+# -------------------------
+
+elif command == "freq_all":
+
+    from quran_letter_counter import ayah_counts
+
+    print("\nLetter frequency across all surahs\n")
+
+    grand_total_plain = 0
+    grand_total_uthmani = 0
+
+    for surah in range(1,115):
+
+        verses = list(range(1, ayah_counts[surah-1] + 1))
+
+        plain, uthmani = count_all_letters_in_verses(surah, verses)
+
+        total_plain = sum(plain.values())
+        total_uthmani = sum(uthmani.values())
+
+        grand_total_plain += total_plain
+        grand_total_uthmani += total_uthmani
+
+        print(
+            f"Surah {surah:3}  "
+            f"Plain:{total_plain:6} "
+            f"Uthmani:{total_uthmani:6}"
+        )
+
+    print("\n----------------------------------")
+    print("TOTAL LETTERS IN QURAN")
+    print("----------------------------------")
+
+    print("Plain total   :", grand_total_plain)
+    print("Divisible by 19:", check_19(grand_total_plain))
+
+    print()
+
+    print("Uthmani total :", grand_total_uthmani)
+    print("Divisible by 19:", check_19(grand_total_uthmani))
+
+
+# -------------------------
+# TOTAL OCCURRENCES OF A LETTER IN QURAN
+# -------------------------
+
+elif command == "letter_total":
+
+    from quran_letter_counter import ayah_counts
+
+    if len(sys.argv) != 3:
+        usage()
+
+    letter = sys.argv[2]
+
+    total_plain = 0
+    total_uthmani = 0
+
+    print(f"\nCounting letter '{letter}' across the entire Quran\n")
+
+    for surah in range(1,115):
+
+        plain, uthmani = count_letter_in_surah(surah, letter)
+
+        total_plain += plain
+        total_uthmani += uthmani
+
+    print("TOTAL OCCURRENCES")
+    print("----------------------")
+
+    print("Plain text   :", total_plain)
+    print("Divisible by 19:", check_19(total_plain))
+
+    print()
+
+    print("Uthmani text :", total_uthmani)
+    print("Divisible by 19:", check_19(total_uthmani))
+
+
+# -------------------------
+# COUNT WORD IN QURAN
+# -------------------------
+
+elif command == "count_word":
+
+    import re
+
+    if len(sys.argv) != 3:
+        usage()
+
+    word = sys.argv[2]
+
+    counter = QuranWordCounter("quran.json")
+
+    total = 0
+
+    print(f"\nSearching for word: {word}\n")
+
+    for surah in range(1,115):
+
+        ayahs = counter.quran[str(surah)]
+
+        for i, ayah in enumerate(ayahs, start=1):
+
+            occurrences = len(re.findall(rf'\b{word}\b', ayah))
+
+            if occurrences > 0:
+
+                print(f"{surah}:{i}  ({occurrences})  {ayah}")
+
+                total += occurrences
+
+    print("\n----------------------------------")
+    print("TOTAL OCCURRENCES:", total)
+    print("Divisible by 19:", check_19(total))
+
+
+# -------------------------
+# ROOT SEARCH
+# -------------------------
+
+elif command == "root":
+
+    import re
+
+    if len(sys.argv) != 3:
+        usage()
+
+    root = sys.argv[2]
+
+    counter = QuranWordCounter("quran.json")
+
+    total = 0
+
+    print(f"\nSearching for root letters: {root}\n")
+
+    pattern = re.compile(rf"[ء-ي]*{root}[ء-ي]*")
+
+    for surah in range(1,115):
+
+        ayahs = counter.quran[str(surah)]
+
+        for i, ayah in enumerate(ayahs, start=1):
+
+            matches = pattern.findall(ayah)
+
+            if matches:
+
+                print(f"{surah}:{i}  {matches}")
+
+                total += len(matches)
+
+    print("\n----------------------------------")
+    print("TOTAL MATCHES:", total)
+    print("Divisible by 19:", check_19(total))
+
+
+# -------------------------
+# VERSE ANALYSIS
+# -------------------------
+
+elif command == "verse":
+
+    import re
+
+    if len(sys.argv) != 3:
+        usage()
+
+    ref = sys.argv[2]
+
+    if ":" not in ref:
+        print("Format must be surah:ayah (example 96:1)")
+        sys.exit()
+
+    surah, ayah = map(int, ref.split(":"))
+
+    counter = QuranWordCounter("quran.json")
+
+    raw_text = counter.quran[str(surah)][ayah-1]
+
+    # clean verse exactly like the word counter
+    clean_text = counter._clean_text(raw_text)
+
+    words = clean_text.split()
+
+    # remove Bismillah (same logic used in _count_words)
+    if words[:4] == ["بسم", "الله", "الرحمن", "الرحيم"] or \
+       words[:4] == ["بسم", "الله", "الرحمٰن", "الرحيم"]:
+        words = words[4:]
+
+    verse_text = " ".join(words)
+
+    word_count = len(words)
+
+    letters = re.findall(r"[ء-ي]", verse_text)
+    letter_count = len(letters)
+
+    freq = {}
+
+    for l in letters:
+        freq[l] = freq.get(l, 0) + 1
+
+
+    print("\nVerse:", ref)
+    print("----------------------------------")
+    print(verse_text)
+
+    print("\nWord count:", word_count)
+    print("Divisible by 19:", check_19(word_count))
+
+    print("\nLetter count:", letter_count)
+    print("Divisible by 19:", check_19(letter_count))
+
+    print("\nLetter frequency\n")
+
+    for k in sorted(freq):
+        print(k, ":", freq[k])
+
+
+# -------------------------
 # FULL STATS
 # -------------------------
 
